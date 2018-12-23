@@ -1,27 +1,27 @@
 #include <ao/ao.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 
-// C major
+// C major scale
 const int notes[] = {
         0, 2, 4, 5, 7, 9, 11, 12,
         12, 11, 9, 7, 5, 4, 2, 0
 };
 const double volume = 0.3;
-const double bpm = 220;
-const double smooth = 0.1;
+#define BPM 220
+#define SMOOTH 0.1
+
+#define NOTES_COUNT (sizeof(notes) / sizeof(int))
+
+#define SAMPLE_RATE 44100
+#define BUFFER_TIME 2
+#define BUFFER_SIZE (BUFFER_TIME * SAMPLE_RATE)
+
+const double smoothStep = SMOOTH * SAMPLE_RATE;
+
+#define SAMPLE_PER_BEAT ((int) (SAMPLE_RATE / (BPM / 60.)))
 
 int main() {
-    const int notesCount = sizeof(notes) / sizeof(int);
-
-    const int sampleRate = 44100;
-    const int bufferTime = 2;
-    const int bufferSize = bufferTime * sampleRate;
-
-    const double smoothStep = smooth * sampleRate;
-
-    const int samplePerBeat = (int) (sampleRate / (bpm / 60.));
-    const int lastSample = notesCount * samplePerBeat;
-
     printf("Initializing\n");
     ao_initialize();
 
@@ -31,7 +31,7 @@ int main() {
     ao_sample_format sformat;
     sformat.bits = 16;
     sformat.channels = 1;
-    sformat.rate = sampleRate;
+    sformat.rate = SAMPLE_RATE;
     sformat.byte_format = AO_FMT_NATIVE;
     sformat.matrix = 0;
 
@@ -39,12 +39,13 @@ int main() {
 
     int i = 0;
     double cycle = 0;
-    short buffer[bufferSize];
+    short buffer[BUFFER_SIZE];
 
+    const int lastSample = NOTES_COUNT * SAMPLE_PER_BEAT;
     while (i < lastSample) {
         uint32_t j = 0;
-        for (; j < bufferSize && i < lastSample; ++j) {
-            int nota = i / samplePerBeat;
+        for (; j < BUFFER_SIZE && i < lastSample; ++j) {
+            int nota = i / SAMPLE_PER_BEAT;
 
             double freq = 440 * pow(2, notes[nota] / 12.);
             cycle += sin(1 / 44100. * freq);
